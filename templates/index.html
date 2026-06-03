@@ -1,66 +1,172 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
-    <title>3V Phone</title>
+    <meta charset="UTF-8">
+    <title>3V Phone - Trang Chủ</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+        body { background: #f4f4f4; color: #333; }
+
+        /* THANH NAV CHUNG */
+        .navbar {
+            background: #007bff;
+            color: white;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .navbar h1 { font-size: 20px; }
+        .navbar a { color: white; text-decoration: none; margin-left: 15px; font-size: 14px; }
+        .navbar .cart-badge { background: #ffc107; color: #212529; padding: 2px 8px; border-radius: 10px; font-weight: bold; }
+
+        .container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
+        h2 { margin-bottom: 20px; color: #333; border-left: 4px solid #007bff; padding-left: 10px; }
+
+        /* BỘ LỌC TÌM KIẾM */
+        .search-box {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .search-box input {
+            padding: 10px 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            flex: 1;
+            min-width: 140px;
+            font-size: 14px;
+        }
+        .search-box button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .search-box button:hover { background: #0056b3; }
+
+        /* KHUNG THÊM SẢN PHẨM ADMIN */
+        .admin-box {
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+        .admin-box h3 { margin-bottom: 10px; color: #856404; }
+        .admin-box input { padding: 10px; margin-right: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+        .admin-box button { background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .admin-box button:hover { background: #218838; }
+
+        /* LƯỚI SẢN PHẨM */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 25px;
+        }
+        .product-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s;
+        }
+        .product-card:hover { transform: translateY(-4px); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .product-card img { width: 100%; height: 180px; object-fit: contain; margin-bottom: 12px; }
+        .product-card b { font-size: 16px; color: #333; display: block; margin-bottom: 8px; }
+        .price-col { color: #e00; font-weight: bold; font-size: 17px; margin-bottom: 15px; }
+        
+        .btn-add-cart {
+            display: block; background: #007bff; color: white; text-decoration: none; padding: 10px; border-radius: 6px; font-weight: bold; font-size: 14px; text-align: center;
+        }
+        .btn-add-cart:hover { background: #0056b3; }
+
+        /* HÀNH ĐỘNG SỬA XÓA ADMIN */
+        .admin-actions { margin-top: 12px; padding-top: 12px; border-top: 1px dashed #ddd; text-align: left; }
+        .admin-actions input { width: 100%; margin-bottom: 6px; padding: 6px; border-radius: 4px; border: 1px solid #ddd; font-size: 13px; }
+        .admin-actions button { background: #17a2b8; color: white; border: none; padding: 6px; border-radius: 4px; cursor: pointer; width: 100%; margin-bottom: 5px; font-weight: bold; }
+        .admin-actions button:hover { background: #138496; }
+        .btn-delete { color: #dc3545; text-decoration: none; display: block; text-align: center; margin-top: 8px; font-size: 14px; font-weight: bold; }
+    </style>
 </head>
 <body>
 
-<h1>🛒 SHOP ONLINE</h1>
+<div class="navbar">
+    <h1>📱 3V Phone</h1>
+    <div>
+        <a href="/">🏠 Trang chủ</a>
+        {% if session.get("role") == "user" %}
+            <a href="/cart">🛒 Giỏ hàng <span class="cart-badge">{{ cart_count }}</span></a>
+        {% endif %}
+        <a href="/orders">📦 Đơn hàng</a>
+        <a href="/logout">Đăng xuất</a>
+    </div>
+</div>
 
-<a href="/logout">Logout</a>
-
-<hr>
-
-{% if session.get("role") == "admin" %}
-
-<h3>➕ Thêm sản phẩm</h3>
-
-<form action="/add" method="POST" enctype="multipart/form-data">
-    <input name="name" placeholder="Tên">
-    <input name="price" placeholder="Giá">
-    
-    <input type = "file" name="image" >
-    <button>Thêm</button>
-</form>
-
-{% endif %}
-
-<hr>
-
-<form method="GET" action="{{ url_for('home') }}">
-    <input type="text" name="q" placeholder="Tên sản phẩm">
-
-    <input type="number" name="min_price" placeholder="Giá từ">
-
-    <input type="number" name="max_price" placeholder="Giá đến">
-
-    <button type="submit">Tìm kiếm</button>
-</form>
-
-<h2>📦 Sản phẩm</h2>
-
-{% for p in products %}
-<div style="border:1px solid black; padding:10px; margin:10px;">
-
-    <img src="{{ url_for('static', filename=p.image) }}" width="120">
-    <b>{{ p.name }}</b><br>
-    {{ p.price | vnd }} VNĐ
-
+<div class="container">
     {% if session.get("role") == "admin" %}
-
-    <form action="/update/{{ p.id }}" method="POST" enctype="multipart/form-data">
-        <input name="name" placeholder="new name">
-        <input name="price" placeholder="new price">
-        <input type="file" name="new image">
-        <button>Sửa</button>
-    </form>
-
-    <a href="/delete/{{ p.id }}">Xóa</a>
-
+    <div class="admin-box">
+        <h3>➕ Thêm sản phẩm mới (Admin)</h3>
+        <form action="/add" method="POST" enctype="multipart/form-data">
+            <input name="name" placeholder="Tên sản phẩm" required>
+            <input name="price" type="number" placeholder="Giá bán (VNĐ)" required>
+            <input type="file" name="image" required>
+            <button type="submit">Thêm</button>
+        </form>
+    </div>
     {% endif %}
 
+    <form method="GET" action="{{ url_for('home') }}" class="search-box">
+        <input type="text" name="q" value="{{ keyword }}" placeholder="Tìm kiếm sản phẩm theo tên...">
+        <input type="number" name="min_price" placeholder="Giá từ (VNĐ)">
+        <input type="number" name="max_price" placeholder="Giá đến (VNĐ)">
+        <button type="submit">Tìm kiếm</button>
+    </form>
+
+    <h2>📦 Danh sách sản phẩm</h2>
+    <div class="products-grid">
+        {% for p in products %}
+        <div class="product-card">
+            <div>
+                <img src="{{ url_for('static', filename=p.image) }}">
+                <b>{{ p.name }}</b>
+            </div>
+            <div>
+                <div class="price-col">{{ p.price | vnd }} VNĐ</div>
+                
+                {% if session.get("role") == "user" %}
+                    <a href="/cart/add/{{ p.id }}" class="btn-add-cart">🛒 Thêm vào giỏ</a>
+                {% endif %}
+
+                {% if session.get("role") == "admin" %}
+                <div class="admin-actions">
+                    <form action="/update/{{ p.id }}" method="POST" enctype="multipart/form-data">
+                        <input name="name" placeholder="Tên mới">
+                        <input name="price" type="number" placeholder="Giá mới">
+                        <input type="file" name="new image">
+                        <button type="submit">Cập nhật sản phẩm</button>
+                    </form>
+                    <a href="/delete/{{ p.id }}" class="btn-delete" onclick="return confirm('Bạn có chắc muốn xóa sản phẩm này không?')">🗑️ Xóa sản phẩm</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
 </div>
-{% endfor %}
 
 </body>
 </html>

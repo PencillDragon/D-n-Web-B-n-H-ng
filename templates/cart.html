@@ -2,11 +2,12 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Giỏ hàng - 3V Phone</title>
+    <title>3V Phone - Thanh Toán Giỏ Hàng</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
-        body { background: #f4f4f4; }
+        body { background: #f4f4f4; color: #333; }
 
+        /* THANH NAV CHUNG */
         .navbar {
             background: #007bff;
             color: white;
@@ -14,111 +15,67 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         .navbar h1 { font-size: 20px; }
         .navbar a { color: white; text-decoration: none; margin-left: 15px; font-size: 14px; }
 
-        .container { max-width: 800px; margin: 30px auto; padding: 0 20px; }
+        .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
+        h2 { margin-bottom: 20px; color: #333; border-left: 4px solid #007bff; padding-left: 10px; }
 
-        h2 { margin-bottom: 20px; color: #333; }
-
+        /* BẢNG GIỎ HÀNG */
         .cart-table {
             width: 100%;
             border-collapse: collapse;
             background: white;
             border-radius: 10px;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            margin-bottom: 25px;
         }
-        .cart-table th {
-            background: #007bff;
-            color: white;
-            padding: 12px;
-            text-align: left;
-            font-size: 14px;
-        }
-        .cart-table td {
-            padding: 12px;
-            border-bottom: 1px solid #eee;
-            font-size: 14px;
-            vertical-align: middle;
-        }
-        .cart-table img {
-            width: 60px;
-            height: 60px;
-            object-fit: cover;
-            border-radius: 6px;
-        }
+        .cart-table th { background: #007bff; color: white; padding: 14px; text-align: left; font-size: 14px; }
+        .cart-table td { padding: 14px; border-bottom: 1px solid #eee; font-size: 14px; vertical-align: middle; }
+        .cart-table img { width: 60px; height: 60px; object-fit: contain; border-radius: 6px; }
 
-        .qty-form { display: flex; gap: 6px; align-items: center; }
-        .qty-form input {
-            width: 55px;
-            padding: 5px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            text-align: center;
-        }
-        .qty-form button {
-            padding: 5px 10px;
-            background: #ffc107;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-        .btn-delete {
-            color: red;
-            text-decoration: none;
-            font-size: 13px;
-        }
         .price-col { color: #e00; font-weight: bold; }
+        .btn-delete { color: #dc3545; text-decoration: none; font-weight: bold; }
+        .btn-delete:hover { text-decoration: underline; }
 
+        /* KHUNG ĐẶT HÀNG THANH TOÁN */
         .cart-footer {
             background: white;
             border-radius: 10px;
-            margin-top: 20px;
-            padding: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
         }
-        .cart-footer .total {
-            font-size: 20px;
-            font-weight: bold;
-            color: #e00;
-            margin-bottom: 15px;
-        }
+        .cart-footer .total { font-size: 22px; font-weight: bold; color: #e00; margin-bottom: 18px; }
         .cart-footer input[type="text"] {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             border: 1px solid #ccc;
-            border-radius: 5px;
-            margin-bottom: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
             font-size: 14px;
         }
+        .cart-footer input[type="text"]:focus { border-color: #007bff; outline: none; }
         .btn-order {
             width: 100%;
-            padding: 12px;
+            padding: 14px;
             background: #28a745;
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 6px;
             cursor: pointer;
             font-size: 16px;
             font-weight: bold;
         }
         .btn-order:hover { background: #1e7e34; }
 
-        .empty {
-            text-align: center;
-            padding: 40px;
-            color: #888;
-            background: white;
-            border-radius: 10px;
-        }
-        .empty a {
-            display: inline-block;
-            margin-top: 10px;
-            color: #007bff;
-        }
+        /* KHI GIỎ TRỐNG */
+        .empty-box { text-align: center; padding: 50px; background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .empty-box p { color: #888; font-size: 16px; }
+        .empty-box a { display: inline-block; margin-top: 15px; color: #007bff; text-decoration: none; font-weight: bold; }
+        .empty-box a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -128,62 +85,51 @@
     <div>
         <a href="/">🏠 Trang chủ</a>
         <a href="/orders">📦 Đơn hàng</a>
-        <a href="/profile">👤 Tài khoản</a>
         <a href="/logout">Đăng xuất</a>
     </div>
 </div>
 
 <div class="container">
-    <h2>🛒 Giỏ hàng của bạn</h2>
+    <h2>🛒 Giỏ hàng & Thanh toán</h2>
 
-    {% if items %}
-
+    {% if cart_items %}
     <table class="cart-table">
         <thead>
             <tr>
                 <th>Ảnh</th>
-                <th>Sản phẩm</th>
+                <th>Tên sản phẩm</th>
                 <th>Đơn giá</th>
                 <th>Số lượng</th>
                 <th>Thành tiền</th>
-                <th>Xóa</th>
+                <th>Hành động</th>
             </tr>
         </thead>
         <tbody>
-            {% for item in items %}
+            {% for item in cart_items %}
             <tr>
                 <td><img src="{{ url_for('static', filename=item.product.image) }}"></td>
-                <td>{{ item.product.name }}</td>
-                <td class="price-col">{{ item.product.price | vnd }} VNĐ</td>
-                <td>
-                    <form action="/cart/update/{{ item.id }}" method="POST" class="qty-form">
-                        <input type="number" name="quantity" value="{{ item.quantity }}" min="0">
-                        <button type="submit">Cập nhật</button>
-                    </form>
-                </td>
-                <td class="price-col">{{ (item.product.price * item.quantity) | vnd }} VNĐ</td>
-                <td><a href="/cart/delete/{{ item.id }}" class="btn-delete">🗑️ Xóa</a></td>
+                <td><strong>{{ item.product.name }}</strong></td>
+                <td class="price-col">{{ item.product.price | vnd }} đ</td>
+                <td><b>{{ item.quantity }}</b></td>
+                <td class="price-col">{{ (item.product.price * item.quantity) | vnd }} đ</td>
+                <td><a href="/cart/delete/{{ item.id }}" class="btn-delete" onclick="return confirm('Xóa sản phẩm này khỏi giỏ hàng?')">🗑️ Xóa</a></td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 
     <div class="cart-footer">
-        <div class="total">Tổng tiền: {{ total | vnd }} VNĐ</div>
-
+        <div class="total">Tổng tiền cần thanh toán: {{ total | vnd }} VNĐ</div>
         <form action="/order/place" method="POST">
-            <input type="text" name="address" placeholder="📍 Địa chỉ giao hàng" required>
-            <button type="submit" class="btn-order">🚀 Đặt hàng ngay</button>
+            <input type="text" name="address" value="{{ user_address }}" placeholder="📍 Vui lòng ghi chính xác địa chỉ nhận hàng của bạn" required>
+            <button type="submit" class="btn-order">🚀 Xác nhận đặt hàng ngay</button>
         </form>
     </div>
-
     {% else %}
-
-    <div class="empty">
-        <p>Giỏ hàng của bạn đang trống</p>
-        <a href="/">← Quay lại mua sắm</a>
+    <div class="empty-box">
+        <p>Giỏ hàng của bạn đang trống.</p>
+        <a href="/">← Quay lại trang chủ để chọn máy</a>
     </div>
-
     {% endif %}
 </div>
 
