@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Giỏ hàng - 3V Phone</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+        body { background: #f4f4f4; }
+
+        .navbar {
+            background: #007bff;
+            color: white;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .navbar h1 { font-size: 20px; }
+        .navbar a { color: white; text-decoration: none; margin-left: 15px; font-size: 14px; }
+
+        .container { max-width: 800px; margin: 30px auto; padding: 0 20px; }
+
+        h2 { margin-bottom: 20px; color: #333; }
+
+        .cart-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .cart-table th {
+            background: #007bff;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-size: 14px;
+        }
+        .cart-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+            vertical-align: middle;
+        }
+        .cart-table img {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+
+        .qty-form { display: flex; gap: 6px; align-items: center; }
+        .qty-form input {
+            width: 55px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .qty-form button {
+            padding: 5px 10px;
+            background: #ffc107;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .btn-delete {
+            color: red;
+            text-decoration: none;
+            font-size: 13px;
+        }
+        .price-col { color: #e00; font-weight: bold; }
+
+        .cart-footer {
+            background: white;
+            border-radius: 10px;
+            margin-top: 20px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .cart-footer .total {
+            font-size: 20px;
+            font-weight: bold;
+            color: #e00;
+            margin-bottom: 15px;
+        }
+        .cart-footer input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        .btn-order {
+            width: 100%;
+            padding: 12px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .btn-order:hover { background: #1e7e34; }
+
+        .empty {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+            background: white;
+            border-radius: 10px;
+        }
+        .empty a {
+            display: inline-block;
+            margin-top: 10px;
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <h1>🛒 3V Phone</h1>
+    <div>
+        <a href="/">🏠 Trang chủ</a>
+        <a href="/orders">📦 Đơn hàng</a>
+        <a href="/profile">👤 Tài khoản</a>
+        <a href="/logout">Đăng xuất</a>
+    </div>
+</div>
+
+<div class="container">
+    <h2>🛒 Giỏ hàng của bạn</h2>
+
+    {% if items %}
+
+    <table class="cart-table">
+        <thead>
+            <tr>
+                <th>Ảnh</th>
+                <th>Sản phẩm</th>
+                <th>Đơn giá</th>
+                <th>Số lượng</th>
+                <th>Thành tiền</th>
+                <th>Xóa</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td><img src="{{ url_for('static', filename=item.product.image) }}"></td>
+                <td>{{ item.product.name }}</td>
+                <td class="price-col">{{ item.product.price | vnd }} VNĐ</td>
+                <td>
+                    <form action="/cart/update/{{ item.id }}" method="POST" class="qty-form">
+                        <input type="number" name="quantity" value="{{ item.quantity }}" min="0">
+                        <button type="submit">Cập nhật</button>
+                    </form>
+                </td>
+                <td class="price-col">{{ (item.product.price * item.quantity) | vnd }} VNĐ</td>
+                <td><a href="/cart/delete/{{ item.id }}" class="btn-delete">🗑️ Xóa</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="cart-footer">
+        <div class="total">Tổng tiền: {{ total | vnd }} VNĐ</div>
+
+        <form action="/order/place" method="POST">
+            <input type="text" name="address" placeholder="📍 Địa chỉ giao hàng" required>
+            <button type="submit" class="btn-order">🚀 Đặt hàng ngay</button>
+        </form>
+    </div>
+
+    {% else %}
+
+    <div class="empty">
+        <p>Giỏ hàng của bạn đang trống</p>
+        <a href="/">← Quay lại mua sắm</a>
+    </div>
+
+    {% endif %}
+</div>
+
+</body>
+</html>

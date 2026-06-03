@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Đơn hàng của tôi - 3V Phone</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+        body { background: #f4f4f4; }
+
+        .navbar {
+            background: #007bff;
+            color: white;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .navbar h1 { font-size: 20px; }
+        .navbar a { color: white; text-decoration: none; margin-left: 15px; font-size: 14px; }
+
+        .container { max-width: 800px; margin: 30px auto; padding: 0 20px; }
+        h2 { margin-bottom: 20px; color: #333; }
+
+        .order-card {
+            background: white;
+            border-radius: 10px;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .order-info { font-size: 14px; color: #555; }
+        .order-info b { color: #333; font-size: 15px; }
+        .order-total { font-weight: bold; color: #e00; font-size: 16px; }
+
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+        .status-cho { background: #fff3cd; color: #856404; }
+        .status-dang { background: #cce5ff; color: #004085; }
+        .status-xong { background: #d4edda; color: #155724; }
+        .status-huy { background: #f8d7da; color: #721c24; }
+
+        .order-actions { display: flex; gap: 8px; align-items: center; }
+        .btn-detail {
+            padding: 6px 14px;
+            background: #007bff;
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 13px;
+        }
+        .btn-cancel {
+            padding: 6px 14px;
+            background: #dc3545;
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 13px;
+        }
+        .btn-cancel:hover { background: #a71d2a; }
+
+        .empty {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+            background: white;
+            border-radius: 10px;
+        }
+        .empty a { display: inline-block; margin-top: 10px; color: #007bff; }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <h1>🛒 3V Phone</h1>
+    <div>
+        <a href="/">🏠 Trang chủ</a>
+        <a href="/cart">🛒 Giỏ hàng</a>
+        <a href="/profile">👤 Tài khoản</a>
+        <a href="/logout">Đăng xuất</a>
+    </div>
+</div>
+
+<div class="container">
+    <h2>📦 Đơn hàng của tôi</h2>
+
+    {% if orders %}
+
+        {% for o in orders %}
+        <div class="order-card">
+            <div>
+                <div class="order-info">
+                    <b>Đơn hàng #{{ o.id }}</b><br>
+                    📅 {{ o.created_at }}<br>
+                    📍 {{ o.address }}
+                </div>
+            </div>
+
+            <div style="text-align:center;">
+                {% if o.status == "Chờ xử lý" %}
+                    <span class="status status-cho">{{ o.status }}</span>
+                {% elif o.status == "Đang giao" %}
+                    <span class="status status-dang">{{ o.status }}</span>
+                {% elif o.status == "Hoàn thành" %}
+                    <span class="status status-xong">{{ o.status }}</span>
+                {% else %}
+                    <span class="status status-huy">{{ o.status }}</span>
+                {% endif %}
+            </div>
+
+            <div class="order-total">{{ o.total | vnd }} VNĐ</div>
+
+            <div class="order-actions">
+                <a href="/orders/{{ o.id }}" class="btn-detail">Xem chi tiết</a>
+                {% if o.status == "Chờ xử lý" %}
+                    <a href="/orders/cancel/{{ o.id }}" class="btn-cancel"
+                       onclick="return confirm('Bạn có chắc muốn hủy đơn này?')">Hủy đơn</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+
+    {% else %}
+    <div class="empty">
+        <p>Bạn chưa có đơn hàng nào</p>
+        <a href="/">← Mua sắm ngay</a>
+    </div>
+    {% endif %}
+
+</div>
+
+</body>
+</html>
