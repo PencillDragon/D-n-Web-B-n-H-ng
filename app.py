@@ -227,15 +227,36 @@ def delete(id):
 
 @app.route('/update/<int:id>', methods=['POST'])
 def update(id):
-    if session.get("role") != "admin": return "Bạn không có quyền"
+
+    if session.get("role") != "admin":
+        return "Bạn không có quyền"
+
     p = Product.query.get_or_404(id)
-    p.name, p.price = request.form['name'], float(request.form['price'])
-    file = request.files["new image"]
-    if file.filename != "" and allowed_file(file.filename):
-        if os.path.exists(os.path.join("static", p.image)): os.remove(os.path.join("static", p.image))
+
+    name = request.form.get('name')
+    price = request.form.get('price')
+
+    if name:
+        p.name = name
+
+    if price:
+        try:
+            p.price = float(price)
+        except:
+            return "Giá không hợp lệ"
+
+    file = request.files.get("new_image")
+
+    if file and file.filename != "" and allowed_file(file.filename):
+
+        if os.path.exists(os.path.join("static", p.image)):
+            os.remove(os.path.join("static", p.image))
+
         filename = str(uuid.uuid4()) + "." + file.filename.rsplit(".", 1)[1].lower()
         file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
+
         p.image = "uploads/" + filename
+
     db.session.commit()
     return redirect("/")
 
