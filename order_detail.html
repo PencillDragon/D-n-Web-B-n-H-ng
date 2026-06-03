@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Chi tiết đơn hàng - 3V Phone</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+        body { background: #f4f4f4; }
+
+        .navbar {
+            background: #007bff;
+            color: white;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .navbar h1 { font-size: 20px; }
+        .navbar a { color: white; text-decoration: none; margin-left: 15px; font-size: 14px; }
+
+        .container { max-width: 700px; margin: 30px auto; padding: 0 20px; }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        .card h3 { margin-bottom: 12px; color: #333; border-bottom: 2px solid #007bff; padding-bottom: 8px; }
+
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
+        .info-row span { color: #555; }
+        .info-row b { color: #333; }
+
+        .status {
+            display: inline-block;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        .status-cho { background: #fff3cd; color: #856404; }
+        .status-dang { background: #cce5ff; color: #004085; }
+        .status-xong { background: #d4edda; color: #155724; }
+        .status-huy { background: #f8d7da; color: #721c24; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th { background: #f8f9fa; padding: 10px; text-align: left; color: #555; border-bottom: 2px solid #eee; }
+        td { padding: 10px; border-bottom: 1px solid #eee; vertical-align: middle; }
+        td img { width: 50px; height: 50px; object-fit: cover; border-radius: 5px; }
+        .price-col { color: #e00; font-weight: bold; }
+
+        .total-row { font-size: 18px; font-weight: bold; text-align: right; color: #e00; margin-top: 10px; }
+
+        .btn-back {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <h1>🛒 3V Phone</h1>
+    <div>
+        <a href="/">🏠 Trang chủ</a>
+        <a href="/orders">📦 Đơn hàng</a>
+        <a href="/logout">Đăng xuất</a>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="card">
+        <h3>📦 Đơn hàng #{{ order.id }}</h3>
+
+        <div class="info-row">
+            <span>Ngày đặt:</span>
+            <b>{{ order.created_at }}</b>
+        </div>
+
+        <div class="info-row">
+            <span>Địa chỉ giao:</span>
+            <b>{{ order.address }}</b>
+        </div>
+
+        <div class="info-row">
+            <span>Trạng thái:</span>
+            <b>
+                {% if order.status == "Chờ xử lý" %}
+                    <span class="status status-cho">{{ order.status }}</span>
+                {% elif order.status == "Đang giao" %}
+                    <span class="status status-dang">{{ order.status }}</span>
+                {% elif order.status == "Hoàn thành" %}
+                    <span class="status status-xong">{{ order.status }}</span>
+                {% else %}
+                    <span class="status status-huy">{{ order.status }}</span>
+                {% endif %}
+            </b>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>🛍️ Sản phẩm đã đặt</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Ảnh</th>
+                    <th>Sản phẩm</th>
+                    <th>Đơn giá</th>
+                    <th>SL</th>
+                    <th>Thành tiền</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in order.items %}
+                <tr>
+                    <td><img src="{{ url_for('static', filename=item.product.image) }}"></td>
+                    <td>{{ item.product.name }}</td>
+                    <td class="price-col">{{ item.price | vnd }} VNĐ</td>
+                    <td>{{ item.quantity }}</td>
+                    <td class="price-col">{{ (item.price * item.quantity) | vnd }} VNĐ</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="total-row">Tổng: {{ order.total | vnd }} VNĐ</div>
+    </div>
+
+    <a href="/orders" class="btn-back">← Quay lại đơn hàng</a>
+
+</div>
+
+</body>
+</html>
