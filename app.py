@@ -15,8 +15,6 @@ app.config['UPLOAD_FOLDER'] = 'static/uploads'
 
 db = SQLAlchemy(app)
 
-<<<<<<< Updated upstream
-=======
 # người dùng
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
