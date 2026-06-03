@@ -91,7 +91,6 @@ def logout():
     session.clear()
     return redirect("/login")
 
->>>>>>> Stashed changes
 # giỏ hàng
 class Cart(db.Model):
     id = db.Column(db.Integer, primary_key=True)
