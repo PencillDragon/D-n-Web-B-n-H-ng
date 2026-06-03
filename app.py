@@ -1,9 +1,9 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
 import os
 import uuid
-
+from werkzeug.utils import secure_filename
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = "my_secret_key_123"
@@ -16,13 +16,46 @@ app.config['UPLOAD_FOLDER'] = 'static/uploads'
 
 db = SQLAlchemy(app)
 
-# người dùng
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True)
     password = db.Column(db.String(100))
     address = db.Column(db.String(200))
 
+class Product(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100))
+    price = db.Column(db.Float)
+    image = db.Column(db.String(300))
+
+class Cart(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'))
+    quantity = db.Column(db.Integer, default=1)
+
+    user = db.relationship('User', backref='carts')
+    product = db.relationship('Product', backref='carts')
+
+class Order(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    total = db.Column(db.Float)
+    address = db.Column(db.String(200))
+    status = db.Column(db.String(50), default='Chờ xử lý')
+    created_at = db.Column(db.String(50))
+
+    user = db.relationship('User', backref='orders')
+
+class OrderItem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('order.id'))
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'))
+    quantity = db.Column(db.Integer)
+    price = db.Column(db.Float)
+
+    order = db.relationship('Order', backref='items')
+    product = db.relationship('Product', backref='order_items')
 
 with app.app_context():
     db.create_all()
@@ -31,6 +64,10 @@ with app.app_context():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
+
+        existing = User.query.filter_by(username=request.form['username']).first()
+        if existing:
+            return render_template("register.html", error="Username đã tồn tại")
 
         user = User(
             username=request.form['username'],
@@ -58,12 +95,12 @@ def login():
 
         if user:
             session.clear()
-
             session["role"] = "user"
             session["user"] = user.username
+            session["user_id"] = user.id
             return redirect("/")
 
-        return "Sai login"
+        return render_template("login.html", error="Sai tên đăng nhập hoặc mật khẩu")
 
     return render_template("login.html")
 
@@ -81,7 +118,7 @@ def admin_login():
             session["role"] = "admin"
             return redirect("/")
 
-        return "Sai admin"
+        return render_template("admin.html", error="Sai thông tin admin")
 
     return render_template("admin.html")
 
@@ -91,54 +128,156 @@ def logout():
     session.clear()
     return redirect("/login")
 
-# giỏ hàng
-class Cart(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    product_id = db.Column(db.Integer, db.ForeignKey('product.id'))
-    quantity = db.Column(db.Integer, default=1)
+@app.route('/')
+def home():
 
-    user = db.relationship('User', backref='carts')
-    product = db.relationship('Product', backref='carts')
+    if "role" not in session:
+        return redirect(url_for("login"))
 
-# đặt hàng
-class Order(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    total = db.Column(db.Float)
-    address = db.Column(db.String(200))
-    status = db.Column(db.String(50), default='Chờ xử lý')
-    created_at = db.Column(db.String(50))
+    keyword = request.args.get("q", "")
+    min_price = request.args.get("min_price")
+    max_price = request.args.get("max_price")
 
-    user = db.relationship('User', backref='orders')
+    query = Product.query
 
-# hàng được đặt
-class OrderItem(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    order_id = db.Column(db.Integer, db.ForeignKey('order.id'))
-    product_id = db.Column(db.Integer, db.ForeignKey('product.id'))
-    quantity = db.Column(db.Integer)
-    price = db.Column(db.Float)
+    if keyword:
+        query = query.filter(Product.name.ilike(f"%{keyword}%"))
 
-    order = db.relationship('Order', backref='items')
-    product = db.relationship('Product', backref='order_items')
+    if min_price:
+        query = query.filter(Product.price >= float(min_price))
 
+    if max_price:
+        query = query.filter(Product.price <= float(max_price))
 
-db = SQLAlchemy(app)
+    products = query.all()
 
-# mặt hàng
-class Product(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100))
-    price = db.Column(db.Float)
-    image = db.Column(db.String(300))
+    # đếm số lượng giỏ hàng
+    cart_count = 0
+    if session.get("role") == "user":
+        cart_count = Cart.query.filter_by(user_id=session["user_id"]).count()
 
-with app.app_context():
-    db.create_all()
+    return render_template(
+        "index.html",
+        products=products,
+        keyword=keyword,
+        cart_count=cart_count
+    )
+
+# hàm check file ảnh
+def allowed_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.template_filter('vnd')
+def vnd(value):
+    return "{:,.0f}".format(value).replace(",", ".")
+
+# thêm sản phẩm
+@app.route("/add", methods=["POST"])
+def add():
+
+    if session.get("role") != "admin":
+        return "Bạn không có quyền để làm điều này"
+
+    name = request.form["name"]
+    price = request.form["price"]
+    file = request.files["image"]
+
+    if file.filename == "":
+        return "Vui lòng chọn ảnh"
+
+    if not allowed_file(file.filename):
+        return "Định dạng ảnh không đúng"
+
+    ext = file.filename.rsplit(".", 1)[1].lower()
+    filename = str(uuid.uuid4()) + "." + ext
+    save_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+    file.save(save_path)
+
+    p = Product(name=name, price=price, image="uploads/" + filename)
+    db.session.add(p)
+    db.session.commit()
+
+    return redirect("/")
+
+# xóa sản phẩm
+@app.route('/delete/<int:id>')
+def delete(id):
+
+    if session.get("role") != "admin":
+        return "Bạn không có quyền để làm điều này"
+
+    p = Product.query.get_or_404(id)
+
+    if p:
+        image_path = os.path.join("static", p.image)
+        if os.path.exists(image_path):
+            os.remove(image_path)
+
+        db.session.delete(p)
+        db.session.commit()
+
+    return redirect("/")
+
+# cập nhật sản phẩm
+@app.route('/update/<int:id>', methods=['POST'])
+def update(id):
+
+    if session.get("role") != "admin":
+        return "Bạn không có quyền để làm điều này"
+
+    p = Product.query.get_or_404(id)
+
+    p.name = request.form['name']
+    p.price = request.form['price']
+
+    file = request.files["new image"]
+    if file.filename == "":
+        return "Vui lòng chọn ảnh"
+
+    if not allowed_file(file.filename):
+        return "Định dạng ảnh không đúng"
+
+    old_image = os.path.join("static", p.image)
+    if os.path.exists(old_image):
+        os.remove(old_image)
+
+    ext = file.filename.rsplit(".", 1)[1].lower()
+    filename = str(uuid.uuid4()) + "." + ext
+    save_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+    file.save(save_path)
+
+    p.image = "uploads/" + filename
+    db.session.commit()
+
+    return redirect("/")
+
+# xem tất cả đơn hàng (admin)
+@app.route('/admin/orders')
+def admin_orders():
+
+    if session.get("role") != "admin":
+        return "Bạn không có quyền để làm điều này"
+
+    orders = Order.query.order_by(Order.id.desc()).all()
+    return render_template("admin_orders.html", orders=orders)
+
+# cập nhật trạng thái đơn hàng
+@app.route('/admin/order/status/<int:id>', methods=['POST'])
+def update_order_status(id):
+
+    if session.get("role") != "admin":
+        return "Bạn không có quyền để làm điều này"
+
+    order = Order.query.get_or_404(id)
+    order.status = request.form['status']
+    db.session.commit()
+
+    return redirect('/admin/orders')
 
 # thêm vào giỏ hàng
 @app.route('/cart/add/<int:product_id>')
 def cart_add(product_id):
+
     if session.get("role") != "user":
         return redirect("/login")
 
@@ -154,11 +293,13 @@ def cart_add(product_id):
         db.session.add(item)
 
     db.session.commit()
+
     return redirect("/cart")
 
 # xem giỏ hàng
 @app.route('/cart')
 def cart():
+
     if session.get("role") != "user":
         return redirect("/login")
 
@@ -166,15 +307,18 @@ def cart():
     items = Cart.query.filter_by(user_id=user_id).all()
 
     total = sum(i.product.price * i.quantity for i in items)
+
     return render_template("cart.html", items=items, total=total)
 
 # cập nhật số lượng trong giỏ
 @app.route('/cart/update/<int:cart_id>', methods=['POST'])
 def cart_update(cart_id):
+
     if session.get("role") != "user":
         return redirect("/login")
 
     item = Cart.query.get_or_404(cart_id)
+
     qty = int(request.form['quantity'])
 
     if qty <= 0:
@@ -183,22 +327,26 @@ def cart_update(cart_id):
         item.quantity = qty
 
     db.session.commit()
+
     return redirect("/cart")
 
 # xóa khỏi giỏ hàng
 @app.route('/cart/delete/<int:cart_id>')
 def cart_delete(cart_id):
+
     if session.get("role") != "user":
         return redirect("/login")
 
     item = Cart.query.get_or_404(cart_id)
     db.session.delete(item)
     db.session.commit()
+
     return redirect("/cart")
 
 # đặt hàng (từ giỏ hàng)
 @app.route('/order/place', methods=['POST'])
 def order_place():
+
     if session.get("role") != "user":
         return redirect("/login")
 
@@ -232,11 +380,13 @@ def order_place():
         db.session.delete(i)  # xóa khỏi giỏ
 
     db.session.commit()
+
     return redirect("/orders")
 
 # xem đơn hàng của user
 @app.route('/orders')
 def orders():
+
     if session.get("role") != "user":
         return redirect("/login")
 
@@ -248,6 +398,7 @@ def orders():
 # xem chi tiết đơn hàng
 @app.route('/orders/<int:order_id>')
 def order_detail(order_id):
+
     if session.get("role") != "user":
         return redirect("/login")
 
@@ -261,6 +412,7 @@ def order_detail(order_id):
 # hủy đơn hàng
 @app.route('/orders/cancel/<int:order_id>')
 def order_cancel(order_id):
+
     if session.get("role") != "user":
         return redirect("/login")
 
@@ -274,161 +426,8 @@ def order_cancel(order_id):
 
     order.status = "Đã hủy"
     db.session.commit()
+
     return redirect("/orders")
-
-# trang chủ
-@app.route('/')
-def home():
-    
-    if "role" not in session:
-        return redirect(url_for("login"))
-    keyword = request.args.get("q", "")
-    min_price = request.args.get("min_price")
-    max_price = request.args.get("max_price")
-
-    query = Product.query
-
-    if keyword:
-        query = query.filter(Product.name.ilike(f"%{keyword}%"))
-
-    if min_price:
-        query = query.filter(Product.price >= float(min_price))
-
-    if max_price:
-        query = query.filter(Product.price <= float(max_price))
-
-    products = query.all()
-
-    return render_template(
-        "index.html",
-        products=products,
-        keyword=keyword
-    )
-
-# hàm check file ảnh
-def allowed_file(filename):
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
-
-
-@app.template_filter('vnd')
-def vnd(value):
-    return "{:,.0f}".format(value).replace(",", ".")
-
-# thêm
-@app.route("/add", methods=["POST"])
-def add():
-
-    if session.get("role") != "admin":
-        return "Bạn không có quyền để làm điều này"
-
-    name = request.form["name"]
-    price = request.form["price"]
-
-    file = request.files["image"]
-
-    if file.filename == "":
-        return "Vui lòng chọn ảnh"
-
-    if not allowed_file(file.filename):
-        return "Định dạng ảnh không đúng"
-
-    ext = file.filename.rsplit(".", 1)[1].lower()
-    filename = str(uuid.uuid4()) + "." + ext
-
-    save_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-    file.save(save_path)
-
-    
-    p = Product(
-        name=name,
-        price=price,
-        image="uploads/" + filename
-    )
-
-    db.session.add(p)
-    db.session.commit()
-
-    return redirect("/")
-# xóa
-@app.route('/delete/<int:id>')
-def delete(id):
-
-    if session.get("role") != "admin":
-        return "Bạn không có quyền để làm điều này"
-
-    p = Product.query.get_or_404(id)
-
-    if p:
-        image_path = os.path.join("static", p.image)
-
-        if os.path.exists(image_path):
-            os.remove(image_path)
-
-        db.session.delete(p)
-        db.session.commit()
-
-    return redirect("/")
-
-# cập nhật
-@app.route('/update/<int:id>', methods=['POST'])
-def update(id):
-
-    if session.get("role") != "admin":
-        return "Bạn không có quyền để làm điều này"
-
-    p = Product.query.get_or_404(id)
-
-    name = request.form['name']
-    price = request.form['price']
-    
-    p.name=name
-    p.price=price
-
-    file = request.files["new image"]
-    if file.filename == "":
-        return "Vui lòng chọn ảnh"
-
-    if not allowed_file(file.filename):
-        return "Định dạng ảnh không đúng"
-
-    old_image = os.path.join("static", p.image)
-    if os.path.exists(old_image):
-        os.remove(old_image)
-        
-    ext = file.filename.rsplit(".", 1)[1].lower()
-    filename = str(uuid.uuid4()) + "." + ext
-
-    save_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-    file.save(save_path)
-
-    p.image = "uploads/" + filename
-
-    db.session.commit()
-
-    return redirect("/")
-
-# xem tất cả đơn hàng (admin)
-@app.route('/admin/orders')
-def admin_orders():
-
-    if session.get("role") != "admin":
-        return "Bạn không có quyền để làm điều này"
-
-    orders = Order.query.order_by(Order.id.desc()).all()
-    return render_template("admin_orders.html", orders=orders)
-
-# cập nhật trạng thái đơn hàng
-@app.route('/admin/order/status/<int:id>', methods=['POST'])
-def update_order_status(id):
-
-    if session.get("role") != "admin":
-        return "Bạn không có quyền để làm điều này"
-
-    order = Order.query.get_or_404(id)
-    order.status = request.form['status']
-    db.session.commit()
-
-    return redirect('/admin/orders')
 
 if __name__ == "__main__":
     app.run(debug=True)
