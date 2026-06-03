@@ -276,9 +276,6 @@ def order_cancel(order_id):
     db.session.commit()
     return redirect("/orders")
 
-if __name__ == "__main__":
-    app.run(debug=True)
-
 # trang chủ
 @app.route('/')
 def home():
