@@ -155,5 +155,28 @@ def update(id):
 
     return redirect("/")
 
+# xem tất cả đơn hàng (admin)
+@app.route('/admin/orders')
+def admin_orders():
+
+    if session.get("role") != "admin":
+        return "Bạn không có quyền để làm điều này"
+
+    orders = Order.query.order_by(Order.id.desc()).all()
+    return render_template("admin_orders.html", orders=orders)
+
+# cập nhật trạng thái đơn hàng
+@app.route('/admin/order/status/<int:id>', methods=['POST'])
+def update_order_status(id):
+
+    if session.get("role") != "admin":
+        return "Bạn không có quyền để làm điều này"
+
+    order = Order.query.get_or_404(id)
+    order.status = request.form['status']
+    db.session.commit()
+
+    return redirect('/admin/orders')
+
 if __name__ == "__main__":
     app.run(debug=True)
