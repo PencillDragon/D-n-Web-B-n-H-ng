@@ -215,15 +215,26 @@ def add():
     db.session.commit()
     return redirect("/")
 
-@app.route('/delete/<int:id>')
+@app.route('/delete/<int:id>', methods=['GET', 'POST'])
 def delete(id):
-    if session.get("role") != "admin": return "Bạn không có quyền"
-    p = Product.query.get_or_404(id)
-    if p:
-        if os.path.exists(os.path.join("static", p.image)): os.remove(os.path.join("static", p.image))
+    try:
+        p = Product.query.get_or_404(id)
+
+        Cart.query.filter_by(product_id=id).delete()
+
+        if p.image:
+            image_path = os.path.join("static", p.image)
+            if os.path.isfile(image_path):
+                os.remove(image_path)
+
         db.session.delete(p)
         db.session.commit()
-    return redirect("/")
+
+        return redirect("/")
+
+    except Exception as e:
+        db.session.rollback()
+        return str(e)
 
 @app.route('/update/<int:id>', methods=['POST'])
 def update(id):
